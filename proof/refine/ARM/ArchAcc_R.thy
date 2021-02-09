@@ -127,53 +127,6 @@ lemma no_ofail_arch_misc_readObject:
                      no_ofailD[OF no_ofail_arch_obj_at'_readObject_pde]
                      no_ofailD[OF no_ofail_arch_obj_at'_readObject_asidpool])+
 
-method readObject_arch_obj_at'_method
-  =  clarsimp simp: readObject_def obind_def in_omonad split_def loadObject_default_def
-                    obj_at_simps bit_simps' typ_at_to_obj_at_arches
-             split: option.splits if_split_asm
-
-lemma readObject_misc_arch_ko_at':
-  "readObject p s = Some (pte :: pte) \<Longrightarrow> ko_at' pte p s"
-  "readObject p s = Some (pde :: pde) \<Longrightarrow> ko_at' pde p s"
-  "readObject p s = Some (asidp :: asidpool) \<Longrightarrow> ko_at' asidp p s"
-   by readObject_arch_obj_at'_method+
-
-lemmas readObject_ko_at'_pte   [simp, dest!] = readObject_misc_arch_ko_at'(1)
-lemmas readObject_ko_at'_pde   [simp, dest!] = readObject_misc_arch_ko_at'(2)
-lemmas readObject_ko_at'_asidp [simp, dest!] = readObject_misc_arch_ko_at'(3)
-
-lemma readObject_misc_arch_obj_at':
-  "bound (readObject p s ::pte option) \<Longrightarrow> pte_at' p s"
-  "bound (readObject p s ::pde option) \<Longrightarrow> pde_at' p s"
-  "bound (readObject p s ::asidpool option) \<Longrightarrow> asid_pool_at' p s"
-   by readObject_arch_obj_at'_method+
-
-lemmas readObject_pte_at'[simp] = readObject_misc_arch_obj_at'(1)[simplified]
-lemmas readObject_pde_at'[simp] = readObject_misc_arch_obj_at'(2)[simplified]
-lemmas readObject_asid_pool_at'[simp] = readObject_misc_arch_obj_at'(3)[simplified]
-
-method no_fail_r_readObject_method =
-  clarsimp simp: obj_at'_def readObject_def obind_def in_omonad split_def projectKO_eq no_fail_r_def,
-  rule ps_clear_lookupAround2, assumption+, simp,
-  blast intro: is_aligned_no_overflow,
-  clarsimp simp: bit_simps' project_inject obj_at_simps lookupAround2_known1 split: option.splits
-
-lemma no_fail_r_arch_obj_at'_readObject_pte[wp]:
-  "no_fail_r (obj_at' (P::pte \<Rightarrow> bool) p) (readObject p::pte kernel_r)"
-  by no_fail_r_readObject_method
-
-lemma no_fail_r_arch_obj_at'_readObject_pde[wp]:
-  "no_fail_r (obj_at' (P::pde \<Rightarrow> bool) p) (readObject p::pde kernel_r)"
-  by no_fail_r_readObject_method
-
-lemma no_fail_r_arch_obj_at'_readObject_asidpool[wp]:
-  "no_fail_r (obj_at' (P::asidpool \<Rightarrow> bool) p) (readObject p::asidpool kernel_r)"
-  by no_fail_r_readObject_method
-
-lemmas no_fail_r_pte_at'_readObject[simp] = no_fail_r_arch_obj_at'_readObject_pte[where P=\<top>]
-lemmas no_fail_r_pde_at'_readObject[simp] = no_fail_r_arch_obj_at'_readObject_pde[where P=\<top>]
-lemmas no_fail_r_asidpool_at'_readObject[simp] = no_fail_r_arch_obj_at'_readObject_asidpool[where P=\<top>, simplified]
-
 (* aliases for compatibility with master *)
 
 lemmas getPTE_wp = setObject_pte.get_wp
