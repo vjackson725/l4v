@@ -3709,24 +3709,21 @@ lemma no_ofail_readCurTime[simp]:
   "no_ofail \<top> readCurTime"
   unfolding readCurTime_def by clarsimp
 
-lemma ovalid_readCurTime:
+lemma ovalid_readCurTime[wp]:
   "o\<lbrace>\<lambda>s. P (ksCurTime s) s\<rbrace> readCurTime \<lbrace>\<lambda>r s. P r s \<and> r = ksCurTime s\<rbrace>"
   by (simp add: readCurTime_def asks_def obind_def ovalid_def)
 
 lemma ovalid_readRefillReady[rule_format, simp]:
   "ovalid (\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (rTime (refillHd ko) \<le> ksCurTime s + kernelWCETTicks) s)
               (readRefillReady scp) P"
-  unfolding readRefillReady_def readSchedContext_def
-  apply (clarsimp simp: obind_def split: option.split_asm)
-  apply (rename_tac sc t)
-  apply (drule_tac x=sc in spec, simp)
-  apply (fastforce dest: ovalid_readCurTime[rule_format] simp: no_fail_rD[OF no_fail_r_readCurTime])
-  done
+  unfolding readRefillReady_def readSchedContext_def ovalid_def
+  by (fastforce simp: obind_def split: option.split_asm
+                dest: use_ovalid[OF ovalid_readCurTime])
 
 lemma refillReady_wp:
   "\<lbrace>\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (rTime (refillHd ko) \<le> ksCurTime s + kernelWCETTicks) s\<rbrace> refillReady scp \<lbrace>P\<rbrace>"
   unfolding refillReady_def
-  by wp simp
+  by wpsimp (drule use_ovalid[OF ovalid_readRefillReady])
 
 lemma scActive_wp:
   "\<lbrace>\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (0 < scRefillMax ko) s\<rbrace> scActive scp \<lbrace>P\<rbrace>"

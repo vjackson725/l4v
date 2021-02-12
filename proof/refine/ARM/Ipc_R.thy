@@ -2257,39 +2257,6 @@ lemma refills_heads_equal_active:
              split: if_splits)
   done
 
-(* FIXME RT: remove once Michael's awaken PR is merged *)
-lemma refillReady_corres:
-  "sc_ptr = scPtr
-   \<Longrightarrow> corres (=) (valid_pspace and active_sc_valid_refills and active_sc_at sc_ptr) valid_objs'
-              (get_sc_refill_ready sc_ptr) (refillReady scPtr)"
-  apply (rule corres_cross[where Q' = "sc_at' scPtr", OF sc_at'_cross_rel])
-   apply (fastforce simp: obj_at_def is_sc_obj_def valid_obj_def valid_pspace_def)
-  apply (clarsimp simp: get_sc_refill_ready_def refill_ready_def refillReady_def getCurTime_def)
-  apply (rule corres_guard_imp)
-    apply (rule corres_split_deprecated[OF _ get_sc_corres])
-      apply (rename_tac sc sc')
-      apply clarsimp
-      apply (rule corres_split_deprecated[OF _ corres_gets_trivial])
-         apply (clarsimp simp: kernelWCETTicks_def)
-         apply (rename_tac s s')
-         apply (prop_tac "r_time (refill_hd sc) = rTime (refillHd sc')")
-          apply (rule_tac s'=s' in refills_heads_equal_active[THEN conjunct2, symmetric])
-             apply (erule conjunct1)
-            apply (erule conjunct2)
-           apply blast
-          apply blast
-         apply clarsimp
-        apply (clarsimp simp: state_relation_def)
-       apply wpsimp+
-   apply (clarsimp simp: obj_at_def is_sc_obj_def)
-   apply (drule active_sc_valid_refillsE[where scp=sc_ptr,rotated])
-    apply (clarsimp simp: is_sc_active_def is_sc_active_kh_simp[symmetric])
-   apply (fastforce simp: vs_all_heap_simps pred_map_def cfg_valid_refills_def
-                          rr_valid_refills_def sp_valid_refills_def map_project_def
-                          sc_refill_cfgs_of_scs_def valid_pspace_def valid_obj_def)
-  apply (fastforce dest: sc_ko_at_valid_objs_valid_sc')
-  done
-
 lemma refillSufficient_corres:
   "sc_ptr = scPtr
    \<Longrightarrow> corres (=) (valid_pspace and active_sc_valid_refills and active_sc_at sc_ptr) valid_objs'
@@ -2546,14 +2513,10 @@ lemma schedContextResume_corres:
    apply (subgoal_tac "sc_tcb_sc_at (\<lambda>t. bound_sc_tcb_at (\<lambda>sc. sc = Some ptr) (the t) s) ptr s ")
     apply (clarsimp simp: sc_at_ppred_def obj_at_def is_sc_obj_def bound_sc_tcb_at_def is_tcb_def)
     apply (intro conjI impI; (clarsimp simp: invs_def valid_state_def; fail)?)
-          apply (fastforce simp: invs_def valid_state_def valid_pspace_def valid_obj_def)
-         apply (fastforce simp: is_schedulable_bool_def get_tcb_def is_sc_active_def)
-        apply (fastforce simp: vs_all_heap_simps valid_ready_qs_2_def
-                               valid_ready_queued_thread_2_def in_ready_q_def)
+           apply (fastforce dest!: invs_valid_objs elim!: valid_sched_context_size_objsI)+
+         apply (fastforce simp: is_schedulable_bool_def get_tcb_def is_sc_active_def vs_all_heap_simps)+
        apply (fastforce simp: vs_all_heap_simps valid_ready_qs_2_def
-                              valid_ready_queued_thread_2_def in_ready_q_def)
-      apply (fastforce simp: vs_all_heap_simps valid_ready_qs_2_def
-                             valid_ready_queued_thread_2_def in_ready_q_def)
+                              valid_ready_queued_thread_2_def in_ready_q_def)+
      apply (clarsimp simp: is_schedulable_bool_def get_tcb_def)
     apply (clarsimp simp: is_schedulable_bool_def get_tcb_def is_sc_active_def split: option.splits)
    apply (clarsimp simp: sc_at_ppred_def obj_at_def)
