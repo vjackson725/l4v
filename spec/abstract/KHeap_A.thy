@@ -94,9 +94,19 @@ where
    od"
 
 definition
+  read_thread_state :: "obj_ref \<Rightarrow> (thread_state,'z::state_ext) r_monad"
+where
+  "read_thread_state ref \<equiv> thread_read tcb_state ref"
+
+definition
   get_thread_state :: "obj_ref \<Rightarrow> (thread_state,'z::state_ext) s_monad"
 where
   "get_thread_state ref \<equiv> thread_get tcb_state ref"
+
+definition
+  read_tcb_obj_ref :: "(tcb => obj_ref option) \<Rightarrow> obj_ref \<Rightarrow> (obj_ref option,'z::state_ext) r_monad"
+where
+  "read_tcb_obj_ref f ref \<equiv> thread_read f ref"
 
 definition
   get_tcb_obj_ref :: "(tcb => obj_ref option) \<Rightarrow> obj_ref \<Rightarrow> (obj_ref option,'z::state_ext) s_monad"
@@ -410,6 +420,15 @@ where
     cur_time \<leftarrow> gets cur_time;
     return $ sc_refill_ready cur_time sc
   od"
+
+definition
+  read_sc_refill_ready :: "obj_ref \<Rightarrow> (bool, 'z::state_ext) r_monad"
+where
+  "read_sc_refill_ready sc_ptr = do {
+    sc \<leftarrow> read_sched_context sc_ptr;
+    cur_time \<leftarrow> asks cur_time;
+    oreturn $ sc_refill_ready cur_time sc
+  }"
 
 (* end refill checks *)
 

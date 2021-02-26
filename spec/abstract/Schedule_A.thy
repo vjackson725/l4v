@@ -130,6 +130,16 @@ where
   od"
 
 definition
+  read_tcb_refill_ready :: "obj_ref \<Rightarrow> (bool, 'z::state_ext) r_monad"
+where
+  "read_tcb_refill_ready t = do {
+     sc_opt \<leftarrow> read_tcb_obj_ref tcb_sched_context t;
+     sc_ptr \<leftarrow> oassert_opt sc_opt;
+     ready \<leftarrow> read_sc_refill_ready sc_ptr;
+     oreturn ready
+  }"
+
+definition
   get_tcb_refill_ready :: "obj_ref \<Rightarrow> (bool, 'z::state_ext) s_monad"
 where
   "get_tcb_refill_ready t = do
@@ -148,6 +158,15 @@ where
      else get_tcb_refill_ready (hd rq)
    od"
 
+definition read_release_q_non_empty_and_ready :: "(bool, 'z::state_ext) r_monad"
+where
+  "read_release_q_non_empty_and_ready \<equiv> do {
+     rq \<leftarrow> asks release_queue;
+     if rq = []
+     then oreturn False
+     else read_tcb_refill_ready (hd rq)
+   }"
+
 definition tcb_release_dequeue :: "(obj_ref, 'z::state_ext) s_monad"
 where
   "tcb_release_dequeue = do
@@ -165,7 +184,7 @@ where
 
 definition awaken :: "(unit, 'z::state_ext) s_monad"
 where
-  "awaken \<equiv> whileLoop (\<lambda>r s. the (fun_of_m release_q_non_empty_and_ready s)) (\<lambda>_. awaken_body) ()"
+  "awaken \<equiv> whileLoop (\<lambda>r s. the (read_release_q_non_empty_and_ready s)) (\<lambda>_. awaken_body) ()"
 
 definition max_non_empty_queue :: "(priority \<Rightarrow> ready_queue) \<Rightarrow> ready_queue" where
   "max_non_empty_queue queues \<equiv> queues (Max {prio. queues prio \<noteq> []})"
