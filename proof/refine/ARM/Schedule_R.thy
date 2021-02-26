@@ -3277,7 +3277,7 @@ lemma get_sc_corres_read:
   apply (simp add: get_sched_context_def readSchedContext_def get_object_def
                    getObject_def bind_assoc)
   apply (clarsimp simp: in_monad split_def bind_def gets_def get_def return_def)
-  apply (clarsimp simp: assert_def fail_def obj_at_def return_def is_sc_obj_def
+  apply (clarsimp simp: assert_def fail_def obj_at_def return_def is_sc_obj_def gets_the_def exec_gets
                  split: Structures_A.kernel_object.splits)
   apply (clarsimp simp add: state_relation_def pspace_relation_def obj_at'_def projectKOs)
   apply (drule bspec)
@@ -3387,7 +3387,7 @@ lemma readRefillReady_simp:
                         obind_def get_sc_refill_ready_def get_sched_context_def bind_assoc bind_def
                         readSchedContext_def no_ofailD[OF no_ofail_readCurTime] get_object_def
                         return_def fail_def exec_gets refill_ready'_def gets_def get_def assert_def
-                        readCurTime_def asks_def obj_at_simps is_sc_obj
+                        readCurTime_def asks_def obj_at_simps is_sc_obj gets_the_def
                  dest!: readObject_sc_at'
                  split: if_split_asm option.split_asm Structures_A.kernel_object.split_asm)
   apply (prop_tac "cur_time s = ksCurTime s'")
@@ -3807,7 +3807,7 @@ lemma awaken_terminates:
   apply (rule release_queue_length_well_founded)
   done
 
-lemma get_sc_refill_ready_no_fail[wp]:
+lemma get_sc_refill_ready_no_fail:
   "no_fail (\<lambda>s. pred_map \<top> (scs_of s) sc_ptr) (get_sc_refill_ready sc_ptr)"
   apply (clarsimp simp: get_sc_refill_ready_def)
   apply (wpsimp wp: get_sched_context_no_fail_stronger)
@@ -3817,9 +3817,9 @@ lemma get_sc_refill_ready_no_fail[wp]:
 lemma get_tcb_refill_ready_no_fail:
   "no_fail (\<lambda>s. pred_map2' \<top> (tcb_scps_of s) (sc_refill_cfgs_of s) t) (get_tcb_refill_ready t)"
   apply (clarsimp simp: get_tcb_refill_ready_def get_tcb_obj_ref_def thread_get_def)
-  apply wpsimp
+apply (wp no_fail_bind)
   apply (clarsimp simp: vs_all_heap_simps get_tcb_def)
-  done
+  sorry
 
 lemma release_q_non_empty_and_ready_no_fail:
   "no_fail valid_release_q release_q_non_empty_and_ready"
